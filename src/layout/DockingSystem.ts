@@ -57,6 +57,10 @@ export class DockingSystem extends BaseComponent<DockingSystemProps> {
             backgroundColor: Theme.colors.bgSecondary
         });
         area.tabs.forEach((t, i) => {
+            if (!t.icon) {
+                throw new Error('Icon is required');
+            }
+
             const tab = new Tab({
                 label: t.label,
                 icon: t.icon,
@@ -72,9 +76,13 @@ export class DockingSystem extends BaseComponent<DockingSystemProps> {
             header.appendChildren(tab);
         });
 
+        const activeContent = area.tabs[area.activeTabIndex]?.content;
+        if (!activeContent) {
+            throw new Error('Active tab content not found');
+        }
+
         // Content Area
         const content = new Stack({ fill: true, scrollable: true });
-        const activeContent = area.tabs[area.activeTabIndex].content;
         content.appendChildren(activeContent);
 
         container.appendChildren(header, content);

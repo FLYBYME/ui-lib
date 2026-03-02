@@ -18,8 +18,9 @@ export class PromptDialog extends Modal {
 
     constructor(options: PromptDialogOptions, resolve: (value: string | null) => void) {
         let currentValue = options.defaultValue || '';
+        const placeholder = options.placeholder || '';
         const input = new TextInput({
-            placeholder: options.placeholder,
+            placeholder: placeholder,
             value: currentValue,
             type: options.password ? 'password' : 'text',
             onChange: (val) => { currentValue = val; }

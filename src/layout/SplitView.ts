@@ -130,7 +130,7 @@ export class SplitView extends BaseComponent<SplitViewProps> {
             const leftSize = leftPaneStartSize + delta;
             const rightSize = rightPaneStartSize - delta;
 
-            if (leftSize > 50 && rightSize > 50) { // Simple min size check
+            if (leftSize > 50 && rightSize > 50 && leftPane && rightPane) { // Simple min size check
                 leftPane.style.flex = `0 0 ${leftSize}px`;
                 rightPane.style.flex = `1 1 auto`;
             }
@@ -144,9 +144,20 @@ export class SplitView extends BaseComponent<SplitViewProps> {
 
         sash.onmousedown = (e: MouseEvent) => {
             e.preventDefault();
+            if (!this.paneElements[leftPaneIndex] || !this.paneElements[leftPaneIndex + 1]) {
+                throw new Error('Pane not found');
+            }
+
+            const leftFlex = this.paneElements[leftPaneIndex].style.flex;
+            const rightFlex = this.paneElements[leftPaneIndex + 1]?.style.flex || '1 1 auto';
+
+            if (!leftFlex || !rightFlex) {
+                throw new Error('Pane flex not found');
+            }
+
             startPos = this.props.orientation === 'vertical' ? e.clientY : e.clientX;
             leftPaneStartSize = this.props.orientation === 'vertical' ? this.paneElements[leftPaneIndex].offsetHeight : this.paneElements[leftPaneIndex].offsetWidth;
-            rightPaneStartSize = this.props.orientation === 'vertical' ? this.paneElements[leftPaneIndex + 1].offsetHeight : this.paneElements[leftPaneIndex + 1].offsetWidth;
+            rightPaneStartSize = this.props.orientation === 'vertical' ? this.paneElements[leftPaneIndex + 1]?.offsetHeight || 0 : this.paneElements[leftPaneIndex + 1]?.offsetWidth || 0;
 
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);

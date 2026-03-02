@@ -79,6 +79,9 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
 
         for (let i = startIndex; i < endIndex; i++) {
             const item = items[i];
+            if (item === undefined) {
+                continue;
+            }
             const rendered = renderItem(item, i);
             if (rendered instanceof BaseComponent) {
                 this.content.appendChild(rendered.getElement());

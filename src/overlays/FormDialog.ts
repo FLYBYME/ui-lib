@@ -44,34 +44,35 @@ export class FormDialog extends Modal {
         options.fields.forEach(field => {
             let control: BaseComponent<any>;
             values[field.id] = field.value ?? field.defaultValue ?? '';
-
+            const disabled = field.disabled ?? false;
+            const placeholder = field.placeholder ?? '';
             if (field.type === 'checkbox') {
                 control = new Checkbox({
                     label: field.label,
                     checked: !!values[field.id],
-                    disabled: field.disabled,
+                    disabled: disabled,
                     onChange: (val) => values[field.id] = val
                 });
             } else if (field.type === 'select') {
                 control = new Select({
                     options: field.options || [],
                     value: values[field.id],
-                    disabled: field.disabled,
+                    disabled: disabled,
                     onChange: (val) => values[field.id] = val
                 });
             } else if (field.type === 'textarea') {
                 control = new TextArea({
-                    placeholder: field.placeholder,
+                    placeholder: placeholder,
                     value: values[field.id],
-                    disabled: field.disabled,
+                    disabled: disabled,
                     onChange: (val) => values[field.id] = val
                 });
             } else {
                 control = new TextInput({
                     type: field.type === 'password' ? 'password' : (field.type === 'email' ? 'email' : 'text'),
-                    placeholder: field.placeholder,
+                    placeholder: placeholder,
                     value: values[field.id],
-                    disabled: field.disabled,
+                    disabled: disabled,
                     onChange: (val) => values[field.id] = val
                 });
             }

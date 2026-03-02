@@ -21,8 +21,8 @@ export class Spacer extends BaseComponent<SpacerProps> {
         const { flex = '1', height, width } = this.props;
         this.applyStyles({
             flex,
-            height,
-            width,
+            height: height || 'auto',
+            width: width || 'auto',
             pointerEvents: 'none'
         });
     }

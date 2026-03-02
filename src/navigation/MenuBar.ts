@@ -34,6 +34,9 @@ export class MenuBar extends BaseComponent<{}> {
             const existingIndex = this.items.findIndex(item => item.props.id === props.id);
             if (existingIndex !== -1) {
                 const oldItem = this.items[existingIndex];
+                if (!oldItem) {
+                    throw new Error('Old item not found');
+                }
                 const newItem = new MenuItem(props);
 
                 this.element.replaceChild(newItem.getElement(), oldItem.getElement());
