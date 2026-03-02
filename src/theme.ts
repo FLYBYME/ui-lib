@@ -13,6 +13,7 @@ export const Theme = {
         warning: '#f59e0b',
         error: '#ef4444',
         info: '#3b82f6',
+        bgHover: 'rgba(255, 255, 255, 0.05)',
     },
     spacing: {
         xs: '4px',
