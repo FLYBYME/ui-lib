@@ -96,7 +96,10 @@ export class QuickPickDialog<T extends QuickPickItem> extends Modal {
 
     public static show<T extends QuickPickItem>(items: T[], options: QuickPickOptions): Promise<T | null> {
         return new Promise((resolve) => {
-            const dialog = new QuickPickDialog(items, options, resolve);
+            const dialog = new QuickPickDialog(items, options, (item: T | null) => {
+                resolve(item);
+                dialog.hide();
+            });
             dialog.show();
         });
     }
