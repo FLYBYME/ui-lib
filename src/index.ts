@@ -11,6 +11,8 @@ export * from './feedback/EmptyStateView';
 export * from './feedback/Alert';
 export * from './feedback/Skeleton';
 export * from './feedback/Icon';
+export * from './feedback/Pulse';
+export * from './feedback/NetworkTimeline';
 
 // Data display components
 export * from './data-compoents/Tag';
