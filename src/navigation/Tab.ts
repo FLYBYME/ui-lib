@@ -1,10 +1,10 @@
 // ui-lib/navigation/Tab.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 import { Text } from '../typography/Text';
 
-export interface TabProps {
+export interface TabProps extends BaseComponentProps {
     label: string;
     icon?: string;
     active?: boolean;
@@ -36,14 +36,15 @@ export class Tab extends BaseComponent<TabProps> {
             alignItems: 'center',
             padding: `0 ${Theme.spacing.md}`,
             height: '35px',
-            backgroundColor: active ? Theme.colors.bgPrimary : Theme.colors.bgSecondary,
-            borderRight: `1px solid ${Theme.colors.border}`,
+            backgroundColor: 'transparent',
+            borderRight: 'none',
             cursor: 'pointer',
             userSelect: 'none',
             position: 'relative',
-            minWidth: '120px',
+            minWidth: 'auto',
             maxWidth: '200px',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            transition: 'all 0.2s ease'
         });
 
         // Active indicator (bottom border)
@@ -103,11 +104,11 @@ export class Tab extends BaseComponent<TabProps> {
 
             // Hover effects for the tab
             this.element.onmouseenter = () => {
-                if (!active) this.applyStyles({ backgroundColor: Theme.colors.bgTertiary });
+                if (!active) this.applyStyles({ backgroundColor: 'rgba(255, 255, 255, 0.05)' });
                 closeBtn.style.visibility = 'visible';
             };
             this.element.onmouseleave = () => {
-                if (!active) this.applyStyles({ backgroundColor: Theme.colors.bgSecondary });
+                if (!active) this.applyStyles({ backgroundColor: 'transparent' });
                 if (!active) closeBtn.style.visibility = 'hidden';
             };
         }

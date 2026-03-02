@@ -1,9 +1,9 @@
 // ui-lib/layout/Stack.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface StackProps {
+export interface StackProps extends BaseComponentProps {
     direction?: 'row' | 'column' | 'vertical' | 'horizontal';
     align?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
     justify?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
@@ -16,6 +16,7 @@ export interface StackProps {
     height?: string;
     minWidth?: string;
     minHeight?: string;
+    glassmorphism?: boolean;
     children?: (BaseComponent<any> | Node | string)[];
 }
 
@@ -39,6 +40,7 @@ export class Stack extends BaseComponent<StackProps> {
             height,
             minWidth,
             minHeight,
+            glassmorphism = false,
             children = []
         } = this.props;
 
@@ -58,7 +60,10 @@ export class Stack extends BaseComponent<StackProps> {
             width: width || (fill ? '100%' : 'auto'),
             height: height || (fill ? '100%' : 'auto'),
             minWidth: minWidth || '0',
-            minHeight: minHeight || '0'
+            minHeight: minHeight || '0',
+            backgroundColor: glassmorphism ? 'rgba(24, 24, 27, 0.4)' : 'transparent',
+            backdropFilter: glassmorphism ? 'blur(12px) saturate(180%)' : 'none',
+            border: glassmorphism ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
         });
 
         if (children.length > 0) {

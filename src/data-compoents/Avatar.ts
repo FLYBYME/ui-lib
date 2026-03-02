@@ -1,8 +1,7 @@
-// src/client/ui-lib/data/Avatar.ts
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface AvatarProps {
+export interface AvatarProps extends BaseComponentProps {
     src?: string;
     initials?: string;
     size?: number;
@@ -23,7 +22,7 @@ export class Avatar extends BaseComponent<AvatarProps> {
         this.applyStyles({
             width: `${size}px`,
             height: `${size}px`,
-            borderRadius: shape === 'circle' ? '50%' : '4px',
+            borderRadius: shape === 'circle' ? '50%' : '12px',
             backgroundColor: Theme.colors.bgTertiary,
             display: 'inline-flex',
             alignItems: 'center',

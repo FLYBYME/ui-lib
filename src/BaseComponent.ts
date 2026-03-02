@@ -1,6 +1,10 @@
 // ui-lib/BaseComponent.ts
 
-export abstract class BaseComponent<TProps = {}> {
+export interface BaseComponentProps {
+    className?: string;
+}
+
+export abstract class BaseComponent<TProps = any> {
     protected element: HTMLElement;
     protected _props: TProps;
     protected disposables: { dispose: () => void }[] = [];
@@ -12,6 +16,44 @@ export abstract class BaseComponent<TProps = {}> {
     constructor(tagName: string, props: TProps = {} as TProps) {
         this.element = document.createElement(tagName);
         this._props = props;
+        const p = props as any;
+        if (p && typeof p === 'object' && p.className && typeof p.className === 'string') {
+            this.addClasses(...p.className.split(' '));
+        }
+        BaseComponent.injectGlobalAnimations();
+    }
+
+    private static animationsInjected = false;
+    private static injectGlobalAnimations(): void {
+        if (BaseComponent.animationsInjected) return;
+        BaseComponent.animationsInjected = true;
+
+        const style = document.createElement('style');
+        style.id = 'ui-lib-global-animations';
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideInUp {
+                from { transform: translateY(10px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .animate-fadeIn, .fade-in { animation: fadeIn 0.3s ease-out; }
+            .animate-slideInUp, .slide-in-from-bottom { animation: slideInUp 0.3s ease-out; }
+            .animate-pulse { animation: pulse 2s infinite ease-in-out; }
+            .animate-spin, .spin { animation: spin 1s infinite linear; }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
@@ -89,11 +131,21 @@ export abstract class BaseComponent<TProps = {}> {
      * Useful for dynamic components.
      */
     public updateProps(newProps: Partial<TProps>): void {
+        const oldClassName = (this._props as any)?.className;
         this._props = { ...this._props, ...newProps };
+        const newClassName = (this._props as any)?.className;
+
+        if (newClassName !== oldClassName) {
+            if (oldClassName && typeof oldClassName === 'string') {
+                this.element.classList.remove(...oldClassName.split(' '));
+            }
+            if (newClassName && typeof newClassName === 'string') {
+                this.addClasses(...newClassName.split(' '));
+            }
+        }
+
         // Clear existing children before re-rendering
         this.element.innerHTML = '';
-        // const stack = new Error().stack;
-        // console.log(`updateProps ${stack}\n${JSON.stringify(newProps, null, 2)}`);
         this.render();
     }
 

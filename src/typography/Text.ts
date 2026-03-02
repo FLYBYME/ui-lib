@@ -1,11 +1,9 @@
-// ui-lib/typography/Text.ts
-
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface TextProps {
+export interface TextProps extends BaseComponentProps {
     text: string;
-    variant?: 'main' | 'muted' | 'error' | 'accent';
+    variant?: 'main' | 'muted' | 'error' | 'accent' | 'secondary';
     size?: 'xs' | 'sm' | 'base' | 'lg';
     weight?: 'normal' | 'bold' | '500' | '600';
     monospace?: boolean;
@@ -37,9 +35,15 @@ export class Text extends BaseComponent<TextProps> {
 
         // Map variants to our Theme colors
         let color = Theme.colors.textMain;
+        let opacity = '1';
+
         if (variant === 'muted') color = Theme.colors.textMuted;
         if (variant === 'accent') color = Theme.colors.accent;
         if (variant === 'error') color = Theme.colors.error; // Standard IDE error red
+        if (variant === 'secondary') {
+            color = Theme.colors.textMain;
+            opacity = '0.7';
+        }
 
         if (customColor) color = customColor;
 
@@ -51,6 +55,7 @@ export class Text extends BaseComponent<TextProps> {
 
         this.applyStyles({
             color,
+            opacity,
             fontSize,
             fontWeight: weight,
             fontFamily: monospace ? 'var(--font-mono, Consolas, "Courier New", monospace)' : 'inherit',

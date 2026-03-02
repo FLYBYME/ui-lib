@@ -1,10 +1,10 @@
 // ui-lib/overlays/Modal.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 import { Button } from '../forms/Button';
 
-export interface ModalProps {
+export interface ModalProps extends BaseComponentProps {
     title: string;
     children: (BaseComponent<any> | Node | string)[];
     isOpen?: boolean;
@@ -35,7 +35,8 @@ export class Modal extends BaseComponent<ModalProps> {
             left: '0',
             width: '100vw',
             height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(4px)',
             display: 'none',
             justifyContent: 'center',
             alignItems: 'center',
@@ -58,17 +59,19 @@ export class Modal extends BaseComponent<ModalProps> {
         // Header
         const header = document.createElement('div');
         Object.assign(header.style, {
-            padding: `${Theme.spacing.md} ${Theme.spacing.lg}`,
-            borderBottom: `1px solid ${Theme.colors.border}`,
+            padding: `${Theme.spacing.xl} ${Theme.spacing.xl} 0 ${Theme.spacing.xl}`,
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative'
         });
 
         const titleEl = document.createElement('h3');
         titleEl.textContent = title;
         titleEl.style.margin = '0';
-        titleEl.style.fontSize = '16px';
+        titleEl.style.fontSize = '20px';
+        titleEl.style.fontWeight = '700';
+        titleEl.style.textAlign = 'center';
         titleEl.style.color = Theme.colors.textMain;
         header.appendChild(titleEl);
 
@@ -77,12 +80,17 @@ export class Modal extends BaseComponent<ModalProps> {
             variant: 'ghost',
             onClick: () => this.hide()
         });
+        Object.assign(closeBtn.getElement().style, {
+            position: 'absolute',
+            top: '20px',
+            right: '20px'
+        });
         header.appendChild(closeBtn.getElement());
 
         // Body
         const body = document.createElement('div');
         Object.assign(body.style, {
-            padding: Theme.spacing.lg,
+            padding: Theme.spacing.xl,
             flex: '1',
             overflowY: 'auto',
             maxHeight: '70vh',
@@ -102,12 +110,11 @@ export class Modal extends BaseComponent<ModalProps> {
         // Footer
         const footerEl = document.createElement('div');
         Object.assign(footerEl.style, {
-            padding: `${Theme.spacing.md} ${Theme.spacing.lg}`,
-            borderTop: `1px solid ${Theme.colors.border}`,
+            padding: `${Theme.spacing.lg} ${Theme.spacing.xl}`,
             display: footer.length > 0 ? 'flex' : 'none',
             justifyContent: 'flex-end',
             gap: Theme.spacing.md,
-            backgroundColor: Theme.colors.bgSecondary
+            backgroundColor: 'transparent'
         });
 
         footer.forEach(child => {

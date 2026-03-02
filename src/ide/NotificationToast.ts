@@ -1,6 +1,6 @@
 // ui-lib/ide/NotificationToast.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
 export interface NotificationAction {
@@ -9,7 +9,7 @@ export interface NotificationAction {
     isPrimary?: boolean;
 }
 
-export interface NotificationToastProps {
+export interface NotificationToastProps extends BaseComponentProps {
     message: string;
     type?: 'info' | 'success' | 'warning' | 'error';
     duration?: number;
@@ -54,11 +54,11 @@ export class NotificationToast extends BaseComponent<NotificationToastProps> {
             flexDirection: 'column',
             gap: Theme.spacing.xs,
             padding: Theme.spacing.md,
-            backgroundColor: Theme.colors.bgSecondary,
-            border: `1px solid ${Theme.colors.border}`,
+            backgroundColor: '#18181b', // Stronger zinc background
+            border: `1px solid rgba(255, 255, 255, 0.1)`,
             borderLeft: `4px solid ${color}`,
             borderRadius: Theme.radius,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
             color: Theme.colors.textMain,
             minWidth: '320px',
             maxWidth: '450px',

@@ -64,6 +64,7 @@ export * from './overlays/Drawer';
 // Navigation components
 export * from './navigation/Breadcrumb';
 export * from './navigation/Tab';
+export * from './navigation/TabPanel';
 export * from './navigation/TreeItem';
 export * from './navigation/BreadcrumbBar';
 export * from './navigation/VirtualList';

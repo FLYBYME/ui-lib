@@ -1,9 +1,9 @@
 // ui-lib/forms/Button.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface ButtonProps {
+export interface ButtonProps extends BaseComponentProps {
     label?: string;
     icon?: string; // e.g., 'fas fa-play' or 'lucide-play'
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent';
@@ -84,12 +84,13 @@ export class Button extends BaseComponent<ButtonProps> {
             this.applyStyles({
                 backgroundColor: 'transparent',
                 color: Theme.colors.textMain,
+                border: '1px solid transparent'
             });
         } else if (variant === 'danger') {
             this.applyStyles({
-                backgroundColor: Theme.colors.error,
-                color: '#ffffff',
-                border: `1px solid ${Theme.colors.error}`
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                color: Theme.colors.error,
+                border: `1px solid rgba(239, 68, 68, 0.2)`
             });
         } else if (variant === 'accent') {
             this.applyStyles({
@@ -112,7 +113,7 @@ export class Button extends BaseComponent<ButtonProps> {
                 else this.element.style.filter = 'none';
             };
             this.element.onmousedown = () => {
-                this.element.style.transform = 'scale(0.97)';
+                this.element.style.transform = 'scale(0.98)';
             };
             this.element.onmouseup = () => {
                 this.element.style.transform = 'scale(1)';

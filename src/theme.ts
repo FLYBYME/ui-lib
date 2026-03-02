@@ -2,17 +2,17 @@
 
 export const Theme = {
     colors: {
-        accent: 'var(--accent, #007acc)',
-        bgPrimary: 'var(--bg-panel, #1e1e1e)',
-        bgSecondary: 'var(--bg-sidebar, #252526)',
-        bgTertiary: 'var(--bg-input, #2d2d30)',
-        border: 'var(--border, #3e3e42)',
-        textMain: 'var(--text-main, #cccccc)',
-        textMuted: 'var(--text-muted, #888888)',
-        success: 'var(--success, #4caf50)',
-        warning: 'var(--warning, #ff9800)',
-        error: 'var(--error, #f44336)',
-        info: 'var(--info, #007acc)',
+        accent: '#3b82f6',
+        bgPrimary: '#09090b',
+        bgSecondary: 'rgba(24, 24, 27, 0.5)',
+        bgTertiary: '#27272a',
+        border: 'rgba(255, 255, 255, 0.1)',
+        textMain: '#e4e4e7',
+        textMuted: '#71717a',
+        success: '#22c55e',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        info: '#3b82f6',
     },
     spacing: {
         xs: '4px',
@@ -21,7 +21,7 @@ export const Theme = {
         lg: '20px',
         xl: '32px',
     },
-    radius: '4px',
+    radius: '8px',
     font: {
         family: 'var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif)',
         sizeBase: '13px',

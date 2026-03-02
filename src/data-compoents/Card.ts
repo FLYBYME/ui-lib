@@ -1,8 +1,7 @@
-// src/client/ui-lib/data/Card.ts
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface CardProps {
+export interface CardProps extends BaseComponentProps {
     title?: string;
     subtitle?: string;
     headerIcon?: string;
@@ -26,9 +25,9 @@ export class Card extends BaseComponent<CardProps> {
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: variant === 'ghost' ? 'transparent' : Theme.colors.bgSecondary,
-            border: variant === 'elevated' ? 'none' : `1px solid ${Theme.colors.border}`,
+            border: variant === 'elevated' ? '1px solid rgba(255, 255, 255, 0.05)' : `1px solid ${Theme.colors.border}`,
             borderRadius: Theme.radius,
-            boxShadow: variant === 'elevated' ? '0 8px 24px rgba(0, 0, 0, 0.2)' : 'none',
+            boxShadow: variant === 'elevated' ? '0 12px 40px rgba(0, 0, 0, 0.4)' : 'none',
             overflow: 'hidden',
             width: width || 'auto',
             fontFamily: Theme.font.family,

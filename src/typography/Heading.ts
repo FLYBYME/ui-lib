@@ -1,14 +1,15 @@
 // ui-lib/typography/Heading.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface HeadingProps {
+export interface HeadingProps extends BaseComponentProps {
     text: string;
     level?: 1 | 2 | 3 | 4 | 5 | 6; // Maps to h1-h6
     variant?: 'main' | 'muted';
     transform?: 'none' | 'uppercase' | 'capitalize';
     padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+    tracking?: 'tight' | 'normal' | 'wide' | 'widest';
 }
 
 export class Heading extends BaseComponent<HeadingProps> {
@@ -24,7 +25,8 @@ export class Heading extends BaseComponent<HeadingProps> {
             level = 3,
             variant = 'main',
             transform = 'none',
-            padding = 'none'
+            padding = 'none',
+            tracking = 'normal'
         } = this.props;
 
         const color = variant === 'muted' ? Theme.colors.textMuted : Theme.colors.textMain;
@@ -44,6 +46,9 @@ export class Heading extends BaseComponent<HeadingProps> {
             fontSize: sizes[level],
             fontWeight: level <= 3 ? '600' : 'bold',
             textTransform: transform,
+            letterSpacing: tracking === 'tight' ? '-0.02em' :
+                tracking === 'wide' ? '0.05em' :
+                    tracking === 'widest' ? '0.1em' : 'normal',
             margin: '0', // Reset default browser margins
             padding: padding === 'none' ? '0' :
                 padding === 'sm' ? Theme.spacing.sm :

@@ -1,9 +1,9 @@
 // ui-lib/feedback/Badge.ts
 
-import { BaseComponent } from '../BaseComponent';
+import { BaseComponent, BaseComponentProps } from '../BaseComponent';
 import { Theme } from '../theme';
 
-export interface BadgeProps {
+export interface BadgeProps extends BaseComponentProps {
     count?: number | string;
     variant?: 'accent' | 'error' | 'warning' | 'success';
     size?: 'sm' | 'md';
@@ -43,14 +43,14 @@ export class Badge extends BaseComponent<BadgeProps> {
             justifyContent: 'center',
             backgroundColor,
             color: '#ffffff',
-            borderRadius: '10px',
+            borderRadius: '9999px',
             fontSize,
-            fontWeight: 'bold',
-            padding,
-            minWidth,
-            height,
+            fontWeight: '600',
+            padding: '0.125rem 0.5rem',
+            minWidth: 'auto',
+            height: 'auto',
             boxSizing: 'border-box',
-            lineHeight: '1',
+            lineHeight: '1.2',
             textAlign: 'center',
             verticalAlign: 'middle'
         });
