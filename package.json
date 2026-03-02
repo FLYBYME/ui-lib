@@ -11,7 +11,7 @@
         "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
         "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
         "lint": "eslint src/**/*.ts",
-        "prepublishOnly": "npm run build"
+        "postinstall": "npm run build"
     },
     "keywords": [
         "typescript",
