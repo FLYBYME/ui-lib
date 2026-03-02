@@ -37,9 +37,9 @@ export class PropertyGrid extends BaseComponent<PropertyGridProps> {
                 currentGroup = item.group;
                 const groupHeader = new Text({
                     text: currentGroup,
-                    weight: '700',
+                    weight: 'bold',
                     size: 'lg',
-                    variant: 'primary'
+                    variant: 'main'
                 });
                 const headerContainer = document.createElement('div');
                 headerContainer.style.marginTop = Theme.spacing.lg;
