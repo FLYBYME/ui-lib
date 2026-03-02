@@ -193,6 +193,10 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
         this.element.scrollTop = this.element.scrollHeight;
     }
 
+    public scrollToTop(): void {
+        this.element.scrollTop = 0;
+    }
+
     public setSelection(items: T[]): void {
         this.selectedItems = items;
         this.render();
