@@ -24,19 +24,35 @@ export class SplitView extends BaseComponent {
         this.sizes = options.initialSizes || this.panes.map(() => 100 / this.panes.length);
         this.minSizes = options.minSizes || this.panes.map(() => 50);
 
-        this.element.classList.add('split-view', this.orientation);
+        this.applyBaseStyles(); // Inject styles via TS
         this.render();
+    }
+
+    /**
+     * Replaces the missing ui-lib.css by applying critical layout properties.
+     */
+    private applyBaseStyles(): void {
+        Object.assign(this.element.style, {
+            display: 'flex',
+            flexDirection: this.orientation === 'horizontal' ? 'row' : 'column',
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden'
+        });
     }
 
     render(): void {
         this.element.innerHTML = '';
         this.panes.forEach((pane, index) => {
-            pane.classList.add('split-pane');
+            Object.assign(pane.style, {
+                overflow: 'auto',
+                boxSizing: 'border-box',
+                position: 'relative'
+            });
             this.element.appendChild(pane);
 
             if (index < this.panes.length - 1) {
-                const resizer = this.createResizer(index);
-                this.element.appendChild(resizer);
+                this.element.appendChild(this.createResizer(index));
             }
         });
         this.updateDOM();
@@ -44,7 +60,15 @@ export class SplitView extends BaseComponent {
 
     private createResizer(index: number): HTMLElement {
         const resizer = document.createElement('div');
-        resizer.className = 'resizer';
+        // Standard IDE resizer styling
+        Object.assign(resizer.style, {
+            flex: '0 0 4px', // flex-shrink: 0 prevents the resizer from disappearing
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            cursor: this.orientation === 'horizontal' ? 'col-resize' : 'row-resize',
+            zIndex: '100',
+            transition: 'background-color 0.2s'
+        });
+
         resizer.addEventListener('pointerdown', (e) => this.handlePointerDown(index, e));
         return resizer;
     }
@@ -54,21 +78,22 @@ export class SplitView extends BaseComponent {
         this.startX = e.clientX;
         this.startY = e.clientY;
 
-        // Capture exact pixel widths at the start of the drag
+        // Accurate pixel snapshots [cite: 213, 214]
         this.startSizes = this.panes.map(p =>
-            this.orientation === 'horizontal' ? p.getBoundingClientRect().width : p.getBoundingClientRect().height
+            this.orientation === 'horizontal' ? p.offsetWidth : p.offsetHeight
         );
 
-        // Prevent text selection glitching while dragging
-        e.preventDefault();
-        document.body.style.cursor = this.orientation === 'horizontal' ? 'col-resize' : 'row-resize';
-
-        // Listeners refer to the arrow functions, so they can be perfectly removed later
+        // Fixes the "splitting resizer" bug by using stable references
         document.addEventListener('pointermove', this.handlePointerMove);
         document.addEventListener('pointerup', this.handlePointerUp);
+
+        this.element.setPointerCapture(e.pointerId);
+        document.body.style.cursor = this.orientation === 'horizontal' ? 'col-resize' : 'row-resize';
     }
 
-    // Use an Arrow Function to permanently bind 'this', fixing the memory leak
+    /**
+     * Logic for pane constraints and adjacent pane updates
+     */
     private handlePointerMove = (e: PointerEvent): void => {
         if (this.activeResizerIndex === null) return;
 
@@ -76,49 +101,45 @@ export class SplitView extends BaseComponent {
             ? e.clientX - this.startX
             : e.clientY - this.startY;
 
-        let newPrevSize = this.startSizes[this.activeResizerIndex] + delta;
-        let newNextSize = this.startSizes[this.activeResizerIndex + 1] - delta;
+        const i = this.activeResizerIndex;
+        let newPrevSize = this.startSizes[i] + delta;
+        let newNextSize = this.startSizes[i + 1] - delta;
 
-        const minPrev = this.minSizes[this.activeResizerIndex] || 0;
-        const minNext = this.minSizes[this.activeResizerIndex + 1] || 0;
+        const minPrev = this.minSizes[i] || 40;
+        const minNext = this.minSizes[i + 1] || 40;
 
-        // Smarter Clamping: Instead of aborting the function if we hit the limit,
-        // we forcefully clamp the sizes and transfer the excess to the adjacent pane.
+        // Constraint Enforcement: prevents panels from hiding on the right 
         if (newPrevSize < minPrev) {
-            newNextSize = newNextSize - (minPrev - newPrevSize);
             newPrevSize = minPrev;
+            newNextSize = this.startSizes[i] + this.startSizes[i + 1] - minPrev;
         } else if (newNextSize < minNext) {
-            newPrevSize = newPrevSize - (minNext - newNextSize);
             newNextSize = minNext;
+            newPrevSize = this.startSizes[i] + this.startSizes[i + 1] - minNext;
         }
 
-        this.sizes[this.activeResizerIndex] = newPrevSize;
-        this.sizes[this.activeResizerIndex + 1] = newNextSize;
+        this.sizes[i] = newPrevSize;
+        this.sizes[i + 1] = newNextSize;
 
         this.updateDOM();
     };
 
-    // Use an Arrow Function here as well
-    private handlePointerUp = (): void => {
+    private handlePointerUp = (e: PointerEvent): void => {
         document.removeEventListener('pointermove', this.handlePointerMove);
         document.removeEventListener('pointerup', this.handlePointerUp);
-
+        this.element.releasePointerCapture(e.pointerId);
         this.activeResizerIndex = null;
-        document.body.style.cursor = ''; // Restore cursor
+        document.body.style.cursor = '';
     };
 
     private updateDOM(): void {
         this.panes.forEach((pane, index) => {
-            // Apply flex proportion
-            pane.style.flex = `${this.sizes[index]} 1 0%`;
+            // Using pixels for absolute stability in complex layouts 
+            const sizeStyle = this.orientation === 'horizontal' ? 'width' : 'height';
+            const minStyle = this.orientation === 'horizontal' ? 'minWidth' : 'minHeight';
 
-            // CRITICAL FIX: Explicitly enforce the minimum constraints on the DOM element 
-            // so Flexbox honors them when the browser window is resized.
-            if (this.orientation === 'horizontal') {
-                pane.style.minWidth = `${this.minSizes[index] || 0}px`;
-            } else {
-                pane.style.minHeight = `${this.minSizes[index] || 0}px`;
-            }
+            pane.style.flex = `0 0 ${this.sizes[index]}px`;
+            pane.style[sizeStyle] = `${this.sizes[index]}px`;
+            pane.style[minStyle] = `${this.minSizes[index] || 0}px`;
         });
     }
 }
