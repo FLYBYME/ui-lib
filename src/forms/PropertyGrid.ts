@@ -8,6 +8,7 @@ export interface PropertyItem {
     label: string;
     description?: string;
     control: BaseComponent<any> | HTMLElement;
+    group?: string; // Optional group header
 }
 
 export interface PropertyGridProps {
@@ -29,7 +30,26 @@ export class PropertyGrid extends BaseComponent<PropertyGridProps> {
             width: '100%'
         });
 
+        let currentGroup: string | undefined;
+
         this.props.items.forEach(item => {
+            if (item.group && item.group !== currentGroup) {
+                currentGroup = item.group;
+                const groupHeader = new Text({
+                    text: currentGroup,
+                    weight: '700',
+                    size: 'lg',
+                    variant: 'primary'
+                });
+                const headerContainer = document.createElement('div');
+                headerContainer.style.marginTop = Theme.spacing.lg;
+                headerContainer.style.marginBottom = Theme.spacing.xs;
+                headerContainer.style.borderBottom = `1px solid ${Theme.colors.border}`;
+                headerContainer.style.paddingBottom = Theme.spacing.xs;
+                headerContainer.appendChild(groupHeader.getElement());
+                container.appendChildren(headerContainer);
+            }
+
             const row = new Row({
                 align: 'center',
                 justify: 'space-between',
@@ -48,7 +68,7 @@ export class PropertyGrid extends BaseComponent<PropertyGridProps> {
             }
 
             const controlContainer = document.createElement('div');
-            controlContainer.style.minWidth = '120px';
+            controlContainer.style.minWidth = '160px'; // Increased min-width for better control visibility
             controlContainer.style.display = 'flex';
             controlContainer.style.justifyContent = 'flex-end';
 
