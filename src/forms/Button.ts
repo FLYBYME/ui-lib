@@ -1,6 +1,7 @@
 // ui-lib/forms/Button.ts
 
 import { BaseComponent, BaseComponentProps } from '../BaseComponent';
+import { Tooltip } from '../feedback/Tooltip';
 import { Theme } from '../theme';
 
 export interface ButtonProps extends BaseComponentProps {
@@ -10,6 +11,7 @@ export interface ButtonProps extends BaseComponentProps {
     size?: 'sm' | 'base' | 'lg';
     disabled?: boolean;
     loading?: boolean;
+    tooltip?: string;
     onClick?: (e: MouseEvent) => void;
 }
 
@@ -26,6 +28,7 @@ export class Button extends BaseComponent<ButtonProps> {
             variant = 'secondary',
             size = 'base',
             disabled = false,
+            tooltip,
             onClick
         } = this.props;
 
@@ -118,6 +121,14 @@ export class Button extends BaseComponent<ButtonProps> {
             this.element.onmouseup = () => {
                 this.element.style.transform = 'scale(1)';
             };
+        }
+
+        if (tooltip) {
+            new Tooltip({
+                text: tooltip,
+                target: this.element,
+                position: 'top'
+            })
         }
 
         // Structure the content
