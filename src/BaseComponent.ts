@@ -79,14 +79,15 @@ export abstract class BaseComponent<TProps = any> {
     /**
      * Alias for appendChildren(child) for single child appends.
      */
-    public appendChild(child: BaseComponent<any> | Node | string): void {
+    public appendChild(child: BaseComponent<any> | Node | string): BaseComponent<any> {
         this.appendChildren(child);
+        return this;
     }
 
     /**
      * Utility to safely append children (either BaseComponents, DOM nodes, or text).
      */
-    public appendChildren(...children: (BaseComponent<any> | Node | string)[]): void {
+    public appendChildren(...children: (BaseComponent<any> | Node | string)[]): BaseComponent<any> {
         children.forEach(child => {
             if (child instanceof BaseComponent) {
                 this.element.appendChild(child.getElement());
@@ -96,6 +97,7 @@ export abstract class BaseComponent<TProps = any> {
                 this.element.appendChild(child);
             }
         });
+        return this;
     }
 
     /**
@@ -108,29 +110,32 @@ export abstract class BaseComponent<TProps = any> {
     /**
      * Clears all children from the element.
      */
-    public clear(): void {
+    public clear(): BaseComponent<any> {
         this.element.innerHTML = '';
+        return this;
     }
 
     /**
      * Applies inline styles safely.
      */
-    public applyStyles(styles: Partial<CSSStyleDeclaration>): void {
+    public applyStyles(styles: Partial<CSSStyleDeclaration>): BaseComponent<any> {
         Object.assign(this.element.style, styles);
+        return this;
     }
 
     /**
      * Adds CSS classes to the root element.
      */
-    protected addClasses(...classNames: string[]): void {
+    protected addClasses(...classNames: string[]): BaseComponent<any> {
         this.element.classList.add(...classNames.filter(Boolean));
+        return this;
     }
 
     /**
      * Updates props and triggers a re-render. 
      * Useful for dynamic components.
      */
-    public updateProps(newProps: Partial<TProps>): void {
+    public updateProps(newProps: Partial<TProps>): BaseComponent<any> {
         const oldClassName = (this._props as any)?.className;
         this._props = { ...this._props, ...newProps };
         const newClassName = (this._props as any)?.className;
@@ -147,6 +152,7 @@ export abstract class BaseComponent<TProps = any> {
         // Clear existing children before re-rendering
         this.element.innerHTML = '';
         this.render();
+        return this;
     }
 
     public get props(): TProps {
