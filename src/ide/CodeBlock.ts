@@ -6,6 +6,7 @@ import { Theme } from '../theme';
 export interface CodeBlockProps {
     code: string;
     language?: string;
+    minHeight?: string;
 }
 
 export class CodeBlock extends BaseComponent<CodeBlockProps> {
@@ -15,7 +16,7 @@ export class CodeBlock extends BaseComponent<CodeBlockProps> {
     }
 
     public render(): void {
-        const { code, language } = this.props;
+        const { code, language, minHeight } = this.props;
 
         this.applyStyles({
             backgroundColor: Theme.colors.bgTertiary,
@@ -28,7 +29,8 @@ export class CodeBlock extends BaseComponent<CodeBlockProps> {
             lineHeight: '1.5',
             color: Theme.colors.textMain,
             width: '100%',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            minHeight: minHeight || 'auto'
         });
 
         const pre = document.createElement('pre');
