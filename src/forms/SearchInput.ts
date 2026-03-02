@@ -6,6 +6,7 @@ import { Popover } from '../overlays/Popover';
 export interface SearchInputProps {
     placeholder?: string;
     history?: string[];
+    value?: string;
     onSearch?: (value: string) => void;
     onChange?: (value: string) => void;
 }
@@ -17,6 +18,7 @@ export class SearchInput extends BaseComponent<SearchInputProps> {
         super('div', props);
         this.input = new TextInput({
             placeholder: props.placeholder || 'Search...',
+            value: props.value,
             onEnter: (val) => this.handleSearch(val),
             onChange: (val) => {
                 if (this.props.onChange) this.props.onChange(val);
@@ -65,6 +67,10 @@ export class SearchInput extends BaseComponent<SearchInputProps> {
         });
 
         historyBtn.onclick = () => this.showHistory(historyBtn);
+
+        if (this.props.value) {
+            this.input.updateProps({ value: this.props.value });
+        }
 
         this.appendChildren(icon, this.input, historyBtn);
     }
