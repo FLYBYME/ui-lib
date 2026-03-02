@@ -35,6 +35,13 @@ export abstract class BaseComponent<TProps = {}> {
     }
 
     /**
+     * Alias for appendChildren(child) for single child appends.
+     */
+    public appendChild(child: BaseComponent<any> | Node | string): void {
+        this.appendChildren(child);
+    }
+
+    /**
      * Utility to safely append children (either BaseComponents, DOM nodes, or text).
      */
     public appendChildren(...children: (BaseComponent<any> | Node | string)[]): void {
@@ -54,6 +61,13 @@ export abstract class BaseComponent<TProps = {}> {
      */
     public getChildren(): BaseComponent<any>[] {
         return this.element.children as unknown as BaseComponent<any>[];
+    }
+
+    /**
+     * Clears all children from the element.
+     */
+    public clear(): void {
+        this.element.innerHTML = '';
     }
 
     /**

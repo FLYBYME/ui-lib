@@ -4,8 +4,8 @@ import { BaseComponent } from '../BaseComponent';
 import { Theme } from '../theme';
 
 export interface StackProps {
-    direction?: 'row' | 'column';
-    align?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
+    direction?: 'row' | 'column' | 'vertical' | 'horizontal';
+    align?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
     justify?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
     gap?: keyof typeof Theme.spacing | 'none';
     padding?: keyof typeof Theme.spacing | 'none';
@@ -42,9 +42,11 @@ export class Stack extends BaseComponent<StackProps> {
             children = []
         } = this.props;
 
+        const flexDir = direction === 'vertical' ? 'column' : (direction === 'horizontal' ? 'row' : direction);
+
         this.applyStyles({
             display: 'flex',
-            flexDirection: direction,
+            flexDirection: flexDir,
             alignItems: align,
             justifyContent: justify,
             gap: gap !== 'none' ? Theme.spacing[gap] : '0',

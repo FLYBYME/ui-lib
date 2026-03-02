@@ -10,6 +10,7 @@ export interface StatusBarItemProps {
     onClick?: (e: MouseEvent) => void;
     tooltip?: string;
     align?: 'left' | 'right';
+    color?: 'success' | 'warning' | 'error' | 'main' | 'textSecondary';
 }
 
 export class StatusBarItem extends BaseComponent<StatusBarItemProps> {
@@ -28,6 +29,12 @@ export class StatusBarItem extends BaseComponent<StatusBarItemProps> {
 
         this.element.innerHTML = '';
 
+        const color = this.props.color || 'main';
+        const colorValue = color === 'success' ? '#4caf50' :
+            color === 'warning' ? '#ff9800' :
+                color === 'error' ? '#f44336' :
+                    Theme.colors.textMain;
+
         this.applyStyles({
             display: 'inline-flex',
             alignItems: 'center',
@@ -37,7 +44,7 @@ export class StatusBarItem extends BaseComponent<StatusBarItemProps> {
             userSelect: 'none',
             fontSize: '11px',
             gap: '4px',
-            color: Theme.colors.textMain,
+            color: colorValue,
             transition: 'background-color 0.1s'
         });
 

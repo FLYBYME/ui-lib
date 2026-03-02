@@ -5,11 +5,12 @@ import { Theme } from '../theme';
 export type TagVariant = 'default' | 'accent' | 'success' | 'warning' | 'error' | 'muted';
 
 export interface TagProps {
-    label: string;
+    label?: string;
+    text?: string;
     variant?: TagVariant;
     icon?: string;
     onClose?: () => void;
-    size?: 'sm' | 'md';
+    size?: 'sm' | 'md' | 'xs';
     outline?: boolean;
 }
 
@@ -20,15 +21,16 @@ export class Tag extends BaseComponent<TagProps> {
     }
 
     public render(): void {
-        const { label, variant = 'default', icon, onClose, size = 'sm', outline = false } = this.props;
+        const { label, text, variant = 'default', icon, onClose, size = 'sm', outline = false } = this.props;
+        const displayLabel = text || label || '';
 
         this.applyStyles({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: size === 'sm' ? '1px 8px' : '3px 10px',
+            padding: size === 'xs' ? '0px 4px' : (size === 'sm' ? '1px 8px' : '3px 10px'),
             borderRadius: '12px',
-            fontSize: size === 'sm' ? '11px' : '12px',
+            fontSize: size === 'xs' ? '9px' : (size === 'sm' ? '11px' : '12px'),
             fontWeight: '500',
             whiteSpace: 'nowrap',
             cursor: 'default',
@@ -83,13 +85,13 @@ export class Tag extends BaseComponent<TagProps> {
         if (icon) {
             const i = document.createElement('i');
             i.className = icon;
-            i.style.fontSize = size === 'sm' ? '10px' : '12px';
+            i.style.fontSize = size === 'xs' ? '8px' : (size === 'sm' ? '10px' : '12px');
             i.style.opacity = '0.8';
             this.element.appendChild(i);
         }
 
         const span = document.createElement('span');
-        span.textContent = label;
+        span.textContent = displayLabel;
         this.element.appendChild(span);
 
         if (onClose) {
@@ -107,5 +109,9 @@ export class Tag extends BaseComponent<TagProps> {
             };
             this.element.appendChild(closeBtn);
         }
+    }
+
+    public updateText(text: string): void {
+        this.updateProps({ text });
     }
 }

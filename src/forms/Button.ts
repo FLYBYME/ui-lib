@@ -6,7 +6,7 @@ import { Theme } from '../theme';
 export interface ButtonProps {
     label?: string;
     icon?: string; // e.g., 'fas fa-play' or 'lucide-play'
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent';
     size?: 'sm' | 'base' | 'lg';
     disabled?: boolean;
     loading?: boolean;
@@ -90,6 +90,12 @@ export class Button extends BaseComponent<ButtonProps> {
                 backgroundColor: Theme.colors.error,
                 color: '#ffffff',
                 border: `1px solid ${Theme.colors.error}`
+            });
+        } else if (variant === 'accent') {
+            this.applyStyles({
+                backgroundColor: Theme.colors.accent,
+                color: '#ffffff',
+                border: `1px solid ${Theme.colors.accent}`
             });
         }
 

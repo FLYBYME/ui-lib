@@ -4,17 +4,40 @@ import { BaseComponent } from '../BaseComponent';
 import { Theme } from '../theme';
 import { StatusBarItem, StatusBarItemProps } from './StatusBarItem';
 
+export interface StatusBarProps {
+    leftItems?: { id: string; text: string; icon?: string; tooltip?: string }[];
+    rightItems?: { id: string; text: string; icon?: string; tooltip?: string }[];
+}
+
 export class StatusBar extends BaseComponent<{}> {
     private leftContainer: HTMLElement;
     private rightContainer: HTMLElement;
     private items: Map<string, StatusBarItem> = new Map();
 
-    constructor() {
+    constructor(props?: StatusBarProps) {
         super('div', {});
         this.leftContainer = document.createElement('div');
         this.rightContainer = document.createElement('div');
         this.render();
-        this.renderDefaultItems();
+
+        if (props) {
+            props.leftItems?.forEach(item => this.addItem(item.id, item, 'left'));
+            props.rightItems?.forEach(item => this.addItem(item.id, item, 'right'));
+        } else {
+            this.renderDefaultItems();
+        }
+    }
+
+    public updateItem(id: string, props: Partial<StatusBarItemProps>): void {
+        const item = this.items.get(id);
+        if (item) {
+            item.updateProps(props);
+        }
+    }
+
+    // Keep individual helpers for backward compatibility if needed, but they can use updateItem
+    public updateRightItem(id: string, props: Partial<StatusBarItemProps>): void {
+        this.updateItem(id, props);
     }
 
     public render(): void {

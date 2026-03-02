@@ -22,6 +22,7 @@ export * from './data-compoents/Table';
 export * from './forms/Button';
 export * from './forms/Checkbox';
 export * from './forms/TextInput';
+export { TextInput as Input } from './forms/TextInput';
 export * from './forms/TextArea';
 export * from './forms/Select';
 export * from './forms/Switch';

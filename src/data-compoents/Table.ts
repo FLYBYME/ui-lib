@@ -17,11 +17,14 @@ export interface TableProps<T> {
     stickyHeader?: boolean;
     height?: string;
     selectable?: boolean;
+    onSelectionChange?: (selectedRows: T[]) => void;
+    onScroll?: (scrollTop: number, maxScroll: number) => void;
 }
 
 export class Table<T = any> extends BaseComponent<TableProps<T>> {
     private sortKey: string | null = null;
     private sortDir: 'asc' | 'desc' = 'asc';
+    private selectedItems: T[] = [];
 
     constructor(props: TableProps<T>) {
         super('div', props);
@@ -125,17 +128,29 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
 
             if (selectable) {
                 tr.style.cursor = 'pointer';
-                tr.onclick = () => {
-                    if (this.props.onRowSelect) this.props.onRowSelect(item);
+                tr.onclick = (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        const index = this.selectedItems.indexOf(item);
+                        if (index > -1) {
+                            this.selectedItems.splice(index, 1);
+                        } else {
+                            this.selectedItems.push(item);
+                        }
+                    } else {
+                        this.selectedItems = [item];
+                    }
 
-                    // Highlight selected row
-                    tbody.querySelectorAll('tr').forEach(r => {
-                        (r as HTMLElement).style.backgroundColor = 'transparent';
-                        (r as HTMLElement).style.fontWeight = '400';
-                    });
-                    tr.style.backgroundColor = Theme.colors.bgTertiary;
-                    tr.style.fontWeight = '600';
+                    if (this.props.onRowSelect) this.props.onRowSelect(item);
+                    if (this.props.onSelectionChange) this.props.onSelectionChange([...this.selectedItems]);
+
+                    this.render(); // Re-render to show selection
                 };
+            }
+
+            const isSelected = this.selectedItems.includes(item);
+            if (isSelected) {
+                tr.style.backgroundColor = Theme.colors.bgTertiary;
+                tr.style.fontWeight = '600';
             }
 
             columns.forEach(col => {
@@ -160,6 +175,30 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
         });
         table.appendChild(tbody);
         this.element.appendChild(table);
+
+        if (this.props.onScroll) {
+            this.element.onscroll = () => {
+                const scrollTop = this.element.scrollTop;
+                const maxScroll = this.element.scrollHeight - this.element.clientHeight;
+                this.props.onScroll!(scrollTop, maxScroll);
+            };
+        }
+    }
+
+    public updateData(newData: T[]): void {
+        this.updateProps({ data: newData });
+    }
+
+    public scrollToBottom(): void {
+        this.element.scrollTop = this.element.scrollHeight;
+    }
+
+    public setSelection(items: T[]): void {
+        this.selectedItems = items;
+        this.render();
+        if (this.props.onSelectionChange) {
+            this.props.onSelectionChange([...this.selectedItems]);
+        }
     }
 
     private handleSort(key: string): void {

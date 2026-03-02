@@ -11,6 +11,7 @@ export interface TextProps {
     monospace?: boolean;
     truncate?: boolean;     // Essential for sidebars and tree items
     selectable?: boolean;   // Usually false in IDE UI, true in logs/terminals
+    color?: string;
     onClick?: () => void;
 }
 
@@ -30,6 +31,7 @@ export class Text extends BaseComponent<TextProps> {
             monospace = false,
             truncate = false,
             selectable = false,
+            color: customColor,
             onClick
         } = this.props;
 
@@ -38,6 +40,8 @@ export class Text extends BaseComponent<TextProps> {
         if (variant === 'muted') color = Theme.colors.textMuted;
         if (variant === 'accent') color = Theme.colors.accent;
         if (variant === 'error') color = Theme.colors.error; // Standard IDE error red
+
+        if (customColor) color = customColor;
 
         // Map sizes (assuming base is 13px, sm is 11px, lg is 15px for an IDE)
         let fontSize = Theme.font?.sizeBase || '13px';
