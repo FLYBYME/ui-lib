@@ -1,167 +1,124 @@
-// ui-lib/layout/SplitView.ts
-
 import { BaseComponent } from '../BaseComponent';
-import { Theme } from '../theme';
 
-export interface SplitViewProps {
+export interface SplitViewOptions {
     orientation?: 'horizontal' | 'vertical';
-    panes: (BaseComponent<any> | Node)[];
-    initialSizes?: number[]; // Percentages e.g. [30, 70]
-    minSizes?: number[]; // Pixels e.g. [100, 100]
-    minStackWidth?: number; // Pixels at which to stack vertically
+    panes: HTMLElement[];
+    initialSizes?: number[];
+    minSizes?: number[];
 }
 
-export class SplitView extends BaseComponent<SplitViewProps> {
-    private paneElements: HTMLElement[] = [];
-    private sashes: HTMLElement[] = [];
-    private resizeObserver: ResizeObserver | null = null;
-    private isStacked: boolean = false;
+export class SplitView extends BaseComponent {
+    public orientation: 'horizontal' | 'vertical';
+    public panes: HTMLElement[];
+    public sizes: number[];
+    public minSizes: number[];
+    private activeResizerIndex: number | null = null;
+    private startX: number = 0;
+    private startY: number = 0;
+    private startSizes: number[] = [];
 
-    constructor(props: SplitViewProps) {
-        super('div', props);
+    constructor(options: SplitViewOptions) {
+        super('div', options);
+        this.orientation = options.orientation || 'horizontal';
+        this.panes = options.panes;
+        this.sizes = options.initialSizes || this.panes.map(() => 100 / this.panes.length);
+        this.minSizes = options.minSizes || this.panes.map(() => 50);
+
+        this.element.classList.add('split-view', this.orientation);
         this.render();
-        this.initResizeObserver();
     }
 
-    private initResizeObserver(): void {
-        if (!this.props.minStackWidth) return;
-
-        this.resizeObserver = new ResizeObserver(entries => {
-            requestAnimationFrame(() => {
-                if (!this.element) return;
-                for (const entry of entries) {
-                    const width = entry.contentRect.width;
-                    const shouldStack = width < (this.props.minStackWidth || 0);
-
-                    if (shouldStack !== this.isStacked) {
-                        this.isStacked = shouldStack;
-                        this.render();
-                    }
-                }
-            });
-        });
-        this.resizeObserver.observe(this.element);
-    }
-
-    public render(): void {
-        const {
-            orientation = 'horizontal',
-            panes,
-            initialSizes = [],
-            minSizes = [],
-            minStackWidth
-        } = this.props;
-
-        const effectiveOrientation = this.isStacked ? 'vertical' : orientation;
-
-        this.applyStyles({
-            display: 'flex',
-            flexDirection: effectiveOrientation === 'horizontal' ? 'row' : 'column',
-            width: '100%',
-            height: '100%',
-            overflow: this.isStacked ? 'auto' : 'hidden',
-            position: 'relative'
-        });
-
+    render(): void {
         this.element.innerHTML = '';
-        this.paneElements = [];
-        this.sashes = [];
+        this.panes.forEach((pane, index) => {
+            pane.classList.add('split-pane');
+            this.element.appendChild(pane);
 
-        panes.forEach((pane, index) => {
-            const paneWrapper = document.createElement('div');
-            Object.assign(paneWrapper.style, {
-                flex: this.isStacked ? '0 0 auto' : (index < initialSizes.length ? `0 0 ${initialSizes[index]}%` : '1'),
-                overflow: 'hidden',
-                position: 'relative',
-                minWidth: effectiveOrientation === 'horizontal' ? (minSizes[index] ? `${minSizes[index]}px` : '0') : '0',
-                minHeight: effectiveOrientation === 'vertical' ? (minSizes[index] ? `${minSizes[index]}px` : (this.isStacked ? '300px' : '0')) : '0'
-            });
-
-            if (pane instanceof BaseComponent) {
-                paneWrapper.appendChild(pane.getElement());
-            } else {
-                paneWrapper.appendChild(pane);
-            }
-
-            this.element.appendChild(paneWrapper);
-            this.paneElements.push(paneWrapper);
-
-            // Add sash after each pane except the last one, only if not stacked
-            if (!this.isStacked && index < panes.length - 1) {
-                const sash = document.createElement('div');
-                Object.assign(sash.style, {
-                    width: effectiveOrientation === 'horizontal' ? '4px' : '100%',
-                    height: effectiveOrientation === 'vertical' ? '4px' : '100%',
-                    backgroundColor: 'transparent',
-                    cursor: effectiveOrientation === 'horizontal' ? 'col-resize' : 'row-resize',
-                    zIndex: '10',
-                    flexShrink: '0',
-                    transition: 'background-color 0.2s'
-                });
-
-                sash.onmouseenter = () => sash.style.backgroundColor = Theme.colors.accent;
-                sash.onmouseleave = () => sash.style.backgroundColor = 'transparent';
-
-                this.setupDrag(sash, index);
-                this.element.appendChild(sash);
-                this.sashes.push(sash);
+            if (index < this.panes.length - 1) {
+                const resizer = this.createResizer(index);
+                this.element.appendChild(resizer);
             }
         });
+        this.updateDOM();
     }
 
-    public destroy(): void {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
-            this.resizeObserver = null;
+    private createResizer(index: number): HTMLElement {
+        const resizer = document.createElement('div');
+        resizer.className = 'resizer';
+        resizer.addEventListener('pointerdown', (e) => this.handlePointerDown(index, e));
+        return resizer;
+    }
+
+    private handlePointerDown(index: number, e: PointerEvent): void {
+        this.activeResizerIndex = index;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+
+        // Capture exact pixel widths at the start of the drag
+        this.startSizes = this.panes.map(p =>
+            this.orientation === 'horizontal' ? p.getBoundingClientRect().width : p.getBoundingClientRect().height
+        );
+
+        // Prevent text selection glitching while dragging
+        e.preventDefault();
+        document.body.style.cursor = this.orientation === 'horizontal' ? 'col-resize' : 'row-resize';
+
+        // Listeners refer to the arrow functions, so they can be perfectly removed later
+        document.addEventListener('pointermove', this.handlePointerMove);
+        document.addEventListener('pointerup', this.handlePointerUp);
+    }
+
+    // Use an Arrow Function to permanently bind 'this', fixing the memory leak
+    private handlePointerMove = (e: PointerEvent): void => {
+        if (this.activeResizerIndex === null) return;
+
+        const delta = this.orientation === 'horizontal'
+            ? e.clientX - this.startX
+            : e.clientY - this.startY;
+
+        let newPrevSize = this.startSizes[this.activeResizerIndex] + delta;
+        let newNextSize = this.startSizes[this.activeResizerIndex + 1] - delta;
+
+        const minPrev = this.minSizes[this.activeResizerIndex] || 0;
+        const minNext = this.minSizes[this.activeResizerIndex + 1] || 0;
+
+        // Smarter Clamping: Instead of aborting the function if we hit the limit,
+        // we forcefully clamp the sizes and transfer the excess to the adjacent pane.
+        if (newPrevSize < minPrev) {
+            newNextSize = newNextSize - (minPrev - newPrevSize);
+            newPrevSize = minPrev;
+        } else if (newNextSize < minNext) {
+            newPrevSize = newPrevSize - (minNext - newNextSize);
+            newNextSize = minNext;
         }
-        super.destroy();
-    }
 
-    private setupDrag(sash: HTMLElement, leftPaneIndex: number): void {
-        let startPos = 0;
-        let leftPaneStartSize = 0;
-        let rightPaneStartSize = 0;
+        this.sizes[this.activeResizerIndex] = newPrevSize;
+        this.sizes[this.activeResizerIndex + 1] = newNextSize;
 
-        const onMouseMove = (e: MouseEvent) => {
-            const delta = (this.props.orientation === 'vertical' ? e.clientY : e.clientX) - startPos;
-            const leftPane = this.paneElements[leftPaneIndex];
-            const rightPane = this.paneElements[leftPaneIndex + 1];
+        this.updateDOM();
+    };
 
-            const leftSize = leftPaneStartSize + delta;
-            const rightSize = rightPaneStartSize - delta;
+    // Use an Arrow Function here as well
+    private handlePointerUp = (): void => {
+        document.removeEventListener('pointermove', this.handlePointerMove);
+        document.removeEventListener('pointerup', this.handlePointerUp);
 
-            if (leftSize > 50 && rightSize > 50 && leftPane && rightPane) { // Simple min size check
-                leftPane.style.flex = `0 0 ${leftSize}px`;
-                rightPane.style.flex = `1 1 auto`;
+        this.activeResizerIndex = null;
+        document.body.style.cursor = ''; // Restore cursor
+    };
+
+    private updateDOM(): void {
+        this.panes.forEach((pane, index) => {
+            // Apply flex proportion
+            pane.style.flex = `${this.sizes[index]} 1 0%`;
+
+            // CRITICAL FIX: Explicitly enforce the minimum constraints on the DOM element 
+            // so Flexbox honors them when the browser window is resized.
+            if (this.orientation === 'horizontal') {
+                pane.style.minWidth = `${this.minSizes[index] || 0}px`;
+            } else {
+                pane.style.minHeight = `${this.minSizes[index] || 0}px`;
             }
-        };
-
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            document.body.style.cursor = '';
-        };
-
-        sash.onmousedown = (e: MouseEvent) => {
-            e.preventDefault();
-            if (!this.paneElements[leftPaneIndex] || !this.paneElements[leftPaneIndex + 1]) {
-                throw new Error('Pane not found');
-            }
-
-            const leftFlex = this.paneElements[leftPaneIndex].style.flex;
-            const rightFlex = this.paneElements[leftPaneIndex + 1]?.style.flex || '1 1 auto';
-
-            if (!leftFlex || !rightFlex) {
-                throw new Error('Pane flex not found');
-            }
-
-            startPos = this.props.orientation === 'vertical' ? e.clientY : e.clientX;
-            leftPaneStartSize = this.props.orientation === 'vertical' ? this.paneElements[leftPaneIndex].offsetHeight : this.paneElements[leftPaneIndex].offsetWidth;
-            rightPaneStartSize = this.props.orientation === 'vertical' ? this.paneElements[leftPaneIndex + 1]?.offsetHeight || 0 : this.paneElements[leftPaneIndex + 1]?.offsetWidth || 0;
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-            document.body.style.cursor = this.props.orientation === 'horizontal' ? 'col-resize' : 'row-resize';
-        };
+        });
     }
 }
