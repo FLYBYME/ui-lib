@@ -74,6 +74,10 @@ export class TextInput extends BaseComponent<TextInputProps> {
         return (this.element as HTMLInputElement).value;
     }
 
+    public setValue(value: string): void {
+        (this.element as HTMLInputElement).value = value;
+    }
+
     public focus(): void {
         this.element.focus();
     }

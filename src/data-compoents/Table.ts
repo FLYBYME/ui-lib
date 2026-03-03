@@ -25,6 +25,7 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
     private sortKey: string | null = null;
     private sortDir: 'asc' | 'desc' = 'asc';
     private selectedItems: T[] = [];
+    private rowElements: Map<T, HTMLTableRowElement> = new Map();
 
     constructor(props: TableProps<T>) {
         super('div', props);
@@ -40,13 +41,15 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
             overflowY: height ? 'auto' : 'visible',
             height: height || 'auto',
             border: `1px solid ${Theme.colors.border}`,
-            borderRadius: Theme.radius || '4px',
+            borderRadius: Theme.radius || '8px',
             backgroundColor: Theme.colors.bgSecondary,
             fontFamily: Theme.font.family,
-            fontSize: '12px'
+            fontSize: '12px',
+            position: 'relative'
         });
 
         this.element.innerHTML = '';
+        this.rowElements.clear();
 
         const table = document.createElement('table');
         Object.assign(table.style, {
@@ -91,9 +94,9 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
                 sortIcon.style.opacity = '0.5';
                 content.appendChild(sortIcon);
 
-                th.onclick = () => {
+                this.addEventListener(th, 'click', () => {
                     this.handleSort(col.key as string);
-                };
+                });
             }
 
             th.appendChild(content);
@@ -118,40 +121,32 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
 
         displayData.forEach((item) => {
             const tr = document.createElement('tr');
+            this.rowElements.set(item, tr);
+
             Object.assign(tr.style, {
                 borderBottom: `1px solid ${Theme.colors.border}`,
                 transition: 'background-color 0.1s'
             });
 
-            tr.onmouseenter = () => tr.style.backgroundColor = Theme.colors.bgTertiary;
-            tr.onmouseleave = () => tr.style.backgroundColor = 'transparent';
+            this.addEventListener(tr, 'mouseenter', () => {
+                if (!this.selectedItems.includes(item)) {
+                    tr.style.backgroundColor = Theme.colors.bgTertiary;
+                }
+            });
+            this.addEventListener(tr, 'mouseleave', () => {
+                if (!this.selectedItems.includes(item)) {
+                    tr.style.backgroundColor = 'transparent';
+                }
+            });
 
             if (selectable) {
                 tr.style.cursor = 'pointer';
-                tr.onclick = (e) => {
-                    if (e.ctrlKey || e.metaKey) {
-                        const index = this.selectedItems.indexOf(item);
-                        if (index > -1) {
-                            this.selectedItems.splice(index, 1);
-                        } else {
-                            this.selectedItems.push(item);
-                        }
-                    } else {
-                        this.selectedItems = [item];
-                    }
-
-                    if (this.props.onRowSelect) this.props.onRowSelect(item);
-                    if (this.props.onSelectionChange) this.props.onSelectionChange([...this.selectedItems]);
-
-                    this.render(); // Re-render to show selection
-                };
+                this.addEventListener(tr, 'click', ((e: MouseEvent) => {
+                    this.handleRowClick(item, e);
+                }) as EventListener);
             }
 
-            const isSelected = this.selectedItems.includes(item);
-            if (isSelected) {
-                tr.style.backgroundColor = Theme.colors.bgTertiary;
-                tr.style.fontWeight = '600';
-            }
+            this.updateRowStyle(item);
 
             columns.forEach(col => {
                 const td = document.createElement('td');
@@ -160,6 +155,7 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
                 if (col.render) {
                     const rendered = col.render(item);
                     if (rendered instanceof BaseComponent) {
+                        this.appendChild(rendered);
                         td.appendChild(rendered.getElement());
                     } else if (rendered instanceof HTMLElement) {
                         td.appendChild(rendered);
@@ -177,11 +173,48 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
         this.element.appendChild(table);
 
         if (this.props.onScroll) {
-            this.element.onscroll = () => {
+            this.addEventListener(this.element, 'scroll', () => {
                 const scrollTop = this.element.scrollTop;
                 const maxScroll = this.element.scrollHeight - this.element.clientHeight;
                 this.props.onScroll!(scrollTop, maxScroll);
-            };
+            });
+        }
+    }
+
+    private handleRowClick(item: T, e: MouseEvent): void {
+        const oldSelection = [...this.selectedItems];
+
+        if (e.ctrlKey || e.metaKey) {
+            const index = this.selectedItems.indexOf(item);
+            if (index > -1) {
+                this.selectedItems.splice(index, 1);
+            } else {
+                this.selectedItems.push(item);
+            }
+        } else {
+            this.selectedItems = [item];
+        }
+
+        // Only update affected rows
+        const affectedItems = new Set([...oldSelection, ...this.selectedItems]);
+        affectedItems.forEach(affectedItem => this.updateRowStyle(affectedItem));
+
+        if (this.props.onRowSelect) this.props.onRowSelect(item);
+        if (this.props.onSelectionChange) this.props.onSelectionChange([...this.selectedItems]);
+    }
+
+    private updateRowStyle(item: T): void {
+        const tr = this.rowElements.get(item);
+        if (!tr) return;
+
+        const isSelected = this.selectedItems.includes(item);
+        tr.style.backgroundColor = isSelected ? 'var(--ui-bg-hover, rgba(255, 255, 255, 0.1))' : 'transparent';
+        tr.style.fontWeight = isSelected ? '600' : '400';
+
+        if (isSelected) {
+            tr.setAttribute('aria-selected', 'true');
+        } else {
+            tr.removeAttribute('aria-selected');
         }
     }
 
@@ -198,8 +231,12 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
     }
 
     public setSelection(items: T[]): void {
+        const oldSelection = [...this.selectedItems];
         this.selectedItems = items;
-        this.render();
+
+        const affectedItems = new Set([...oldSelection, ...this.selectedItems]);
+        affectedItems.forEach(affectedItem => this.updateRowStyle(affectedItem));
+
         if (this.props.onSelectionChange) {
             this.props.onSelectionChange([...this.selectedItems]);
         }

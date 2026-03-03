@@ -31,21 +31,24 @@ export class Tab extends BaseComponent<TabProps> {
 
         this.element.innerHTML = '';
 
+        this.addClasses('ui-tab');
         this.applyStyles({
             display: 'inline-flex',
             alignItems: 'center',
             padding: `0 ${Theme.spacing.md}`,
             height: '35px',
-            backgroundColor: 'transparent',
-            borderRight: 'none',
+            backgroundColor: active ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
             cursor: 'pointer',
             userSelect: 'none',
             position: 'relative',
-            minWidth: 'auto',
-            maxWidth: '200px',
-            boxSizing: 'border-box',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            outline: 'none'
         });
+
+        // A11y
+        this.element.setAttribute('role', 'tab');
+        this.element.setAttribute('aria-selected', String(active));
+        this.element.setAttribute('tabindex', active ? '0' : '-1');
 
         // Active indicator (bottom border)
         if (active) {
@@ -56,7 +59,7 @@ export class Tab extends BaseComponent<TabProps> {
                 left: '0',
                 right: '0',
                 height: '2px',
-                backgroundColor: Theme.colors.accent
+                backgroundColor: 'var(--ui-accent, #3b82f6)'
             });
             this.element.appendChild(indicator);
         }
@@ -77,6 +80,7 @@ export class Tab extends BaseComponent<TabProps> {
             variant: active ? 'main' : 'muted',
             size: 'sm'
         });
+        this.appendChild(labelText);
         this.element.appendChild(labelText.getElement());
 
         // Close button
@@ -88,33 +92,45 @@ export class Tab extends BaseComponent<TabProps> {
                 fontSize: '10px',
                 padding: '4px',
                 borderRadius: '2px',
-                visibility: active ? 'visible' : 'hidden', // Only show on active or hover
-                opacity: active ? '0.8' : '0.5'
+                visibility: active ? 'visible' : 'hidden',
+                opacity: active ? '0.8' : '0.5',
+                transition: 'background-color 0.1s'
             });
 
-            closeBtn.onclick = (e) => {
+            this.addEventListener(closeBtn, 'click', ((e: MouseEvent) => {
                 e.stopPropagation();
                 if (onClose) onClose(e);
-            };
+            }) as EventListener);
 
-            closeBtn.onmouseenter = () => closeBtn.style.backgroundColor = Theme.colors.bgTertiary;
-            closeBtn.onmouseleave = () => closeBtn.style.backgroundColor = 'transparent';
+            this.addEventListener(closeBtn, 'mouseenter', () => {
+                closeBtn.style.backgroundColor = 'var(--ui-bg-tertiary, #27272a)';
+            });
+            this.addEventListener(closeBtn, 'mouseleave', () => {
+                closeBtn.style.backgroundColor = 'transparent';
+            });
 
             this.element.appendChild(closeBtn);
 
             // Hover effects for the tab
-            this.element.onmouseenter = () => {
-                if (!active) this.applyStyles({ backgroundColor: 'rgba(255, 255, 255, 0.05)' });
+            this.addEventListener(this.element, 'mouseenter', () => {
+                if (!active) this.element.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                 closeBtn.style.visibility = 'visible';
-            };
-            this.element.onmouseleave = () => {
-                if (!active) this.applyStyles({ backgroundColor: 'transparent' });
+            });
+            this.addEventListener(this.element, 'mouseleave', () => {
+                if (!active) this.element.style.backgroundColor = 'transparent';
                 if (!active) closeBtn.style.visibility = 'hidden';
-            };
+            });
         }
 
         if (onClick) {
-            this.element.onclick = onClick;
+            this.addEventListener(this.element, 'click', onClick as EventListener);
         }
+
+        this.addEventListener(this.element, 'keydown', ((e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (onClick) onClick(new MouseEvent('click')); // Trigger click for consistency
+            }
+        }) as EventListener);
     }
 }

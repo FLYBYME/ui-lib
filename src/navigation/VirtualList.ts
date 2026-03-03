@@ -35,14 +35,11 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
             this.updateVisibleItems();
         });
         observer.observe(this.element);
+        this.disposables.push({ dispose: () => observer.disconnect() });
     }
 
     public render(): void {
         const { height = '100%', items, itemHeight } = this.props;
-
-        if (this.container.parentElement !== this.element) {
-            this.element.appendChild(this.container);
-        }
 
         this.applyStyles({
             height,
@@ -63,7 +60,7 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
     }
 
     private initScrollListener(): void {
-        this.element.onscroll = () => this.updateVisibleItems();
+        this.addEventListener(this.element, 'scroll', () => this.updateVisibleItems());
     }
 
     private updateVisibleItems(): void {
@@ -74,7 +71,7 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
         const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
         const endIndex = Math.min(items.length, Math.ceil((scrollTop + viewportHeight) / itemHeight));
 
-        this.content.innerHTML = '';
+        this.clear(); // Use safe clear
         this.content.style.transform = `translateY(${startIndex * itemHeight}px)`;
 
         for (let i = startIndex; i < endIndex; i++) {
@@ -84,6 +81,7 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
             }
             const rendered = renderItem(item, i);
             if (rendered instanceof BaseComponent) {
+                this.appendChild(rendered);
                 this.content.appendChild(rendered.getElement());
             } else {
                 this.content.appendChild(rendered);

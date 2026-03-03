@@ -23,18 +23,28 @@ export class Switch extends BaseComponent<SwitchProps> {
     public render(): void {
         const { checked = false, label } = this.props;
 
+        this.addClasses('ui-switch');
         this.applyStyles({
             display: 'inline-flex',
             alignItems: 'center',
             gap: Theme.spacing.sm,
             cursor: 'pointer',
-            userSelect: 'none'
+            userSelect: 'none',
+            outline: 'none'
         });
+
+        // A11y
+        this.element.setAttribute('role', 'switch');
+        this.element.setAttribute('aria-checked', String(checked));
+        this.element.setAttribute('tabindex', '0');
+        if (label) {
+            this.setAria({ label });
+        }
 
         Object.assign(this.track.style, {
             width: '32px',
             height: '18px',
-            backgroundColor: checked ? Theme.colors.accent : Theme.colors.bgTertiary,
+            backgroundColor: checked ? 'var(--ui-accent, #3b82f6)' : 'var(--ui-bg-tertiary, #27272a)',
             borderRadius: '9px',
             position: 'relative',
             transition: 'background-color 0.2s'
@@ -65,10 +75,21 @@ export class Switch extends BaseComponent<SwitchProps> {
             this.element.appendChild(labelEl);
         }
 
-        this.element.onclick = () => {
-            const nextChecked = !this.props.checked;
-            this.updateProps({ checked: nextChecked });
-            if (this.props.onChange) this.props.onChange(nextChecked);
-        };
+        this.addEventListener(this.element, 'click', () => {
+            this.toggle();
+        });
+
+        this.addEventListener(this.element, 'keydown', ((e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.toggle();
+            }
+        }) as EventListener);
+    }
+
+    private toggle(): void {
+        const nextChecked = !this.props.checked;
+        this.updateProps({ checked: nextChecked });
+        if (this.props.onChange) this.props.onChange(nextChecked);
     }
 }

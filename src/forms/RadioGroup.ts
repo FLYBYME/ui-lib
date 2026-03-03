@@ -13,6 +13,7 @@ export interface RadioGroupProps {
     value?: string;
     name: string;
     onChange?: (value: string) => void;
+    label?: string;
 }
 
 export class RadioGroup extends BaseComponent<RadioGroupProps> {
@@ -22,13 +23,19 @@ export class RadioGroup extends BaseComponent<RadioGroupProps> {
     }
 
     public render(): void {
-        const { options, value, name } = this.props;
+        const { options, value, name, label } = this.props;
 
         this.applyStyles({
             display: 'flex',
             flexDirection: 'column',
             gap: Theme.spacing.sm
         });
+
+        // A11y
+        this.element.setAttribute('role', 'radiogroup');
+        if (label) {
+            this.setAria({ label });
+        }
 
         this.element.innerHTML = '';
 
@@ -54,12 +61,12 @@ export class RadioGroup extends BaseComponent<RadioGroupProps> {
                 cursor: 'pointer'
             });
 
-            radio.onchange = () => {
+            this.addEventListener(radio, 'change', () => {
                 if (radio.checked) {
                     this.updateProps({ value: option.value });
                     if (this.props.onChange) this.props.onChange(option.value);
                 }
-            };
+            });
 
             container.appendChild(radio);
             container.appendChild(document.createTextNode(option.label));
