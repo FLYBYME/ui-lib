@@ -3,6 +3,7 @@
 import { BaseComponent } from '../BaseComponent';
 import { Theme } from '../theme';
 import { Popover } from '../overlays/Popover';
+import { VirtualList } from '../navigation/VirtualList';
 
 export interface SelectOption {
     label: string;
@@ -116,42 +117,49 @@ export class Select extends BaseComponent<SelectProps> {
             overflowY: 'auto'
         });
 
-        const items = this.props.options.map((option, index) => {
-            const el = document.createElement('div');
-            el.setAttribute('role', 'option');
-            el.setAttribute('aria-selected', option.value === this.props.value ? 'true' : 'false');
+        const virtualList = new VirtualList<SelectOption>({
+            items: this.props.options,
+            itemHeight: 32,
+            height: '300px',
+            renderItem: (option, index) => {
+                const el = document.createElement('div');
+                el.setAttribute('role', 'option');
+                el.setAttribute('aria-selected', option.value === this.props.value ? 'true' : 'false');
 
-            Object.assign(el.style, {
-                padding: `${Theme.spacing.xs} ${Theme.spacing.md}`,
-                cursor: 'pointer',
-                color: Theme.colors.textMain,
-                backgroundColor: option.value === this.props.value ? Theme.colors.accent : 'transparent',
-                outline: 'none'
-            });
+                Object.assign(el.style, {
+                    padding: `${Theme.spacing.xs} ${Theme.spacing.md}`,
+                    cursor: 'pointer',
+                    color: Theme.colors.textMain,
+                    backgroundColor: option.value === this.props.value ? Theme.colors.accent : 'transparent',
+                    outline: 'none',
+                    height: '32px',
+                    boxSizing: 'border-box'
+                });
 
-            this.addEventListener(el, 'mouseenter', () => {
-                if (option.value !== this.props.value) {
-                    el.style.backgroundColor = Theme.colors.bgTertiary;
-                }
-            });
-            this.addEventListener(el, 'mouseleave', () => {
-                if (option.value !== this.props.value) {
-                    el.style.backgroundColor = 'transparent';
-                }
-            });
+                this.addEventListener(el, 'mouseenter', () => {
+                    if (option.value !== this.props.value) {
+                        el.style.backgroundColor = Theme.colors.bgTertiary;
+                    }
+                });
+                this.addEventListener(el, 'mouseleave', () => {
+                    if (option.value !== this.props.value) {
+                        el.style.backgroundColor = 'transparent';
+                    }
+                });
 
-            this.addEventListener(el, 'click', () => {
-                this.selectOption(option.value);
-            });
+                this.addEventListener(el, 'click', () => {
+                    this.selectOption(option.value);
+                });
 
-            el.textContent = option.label;
-            return el;
+                el.textContent = option.label;
+                return el;
+            }
         });
 
         this.setAria({ expanded: 'true' });
         this.popover = new Popover({
             anchor: this.button,
-            content: items,
+            content: [virtualList.getElement()],
             placement: 'bottom'
         });
         this.popover.show();

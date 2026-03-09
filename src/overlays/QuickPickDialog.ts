@@ -22,17 +22,18 @@ export class QuickPickDialog<T extends QuickPickItem> extends Modal {
 
         const list = new VirtualList({
             items: filteredItems,
-            itemHeight: 32,
+            itemHeight: 40, // default/fallback
             height: '300px',
             renderItem: (item) => {
                 const row = document.createElement('div');
                 row.style.cssText = `
-                    padding: 4px 8px;
+                    padding: 8px;
                     cursor: pointer;
                     display: flex;
-                    align-items: center;
+                    align-items: flex-start;
                     gap: 8px;
                     border-radius: 4px;
+                    min-height: 32px;
                 `;
                 row.onmouseenter = () => row.style.backgroundColor = 'rgba(255,255,255,0.05)';
                 row.onmouseleave = () => row.style.backgroundColor = 'transparent';

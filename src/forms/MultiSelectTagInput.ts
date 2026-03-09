@@ -2,6 +2,7 @@ import { BaseComponent } from '../BaseComponent';
 import { Theme } from '../theme';
 import { Badge } from '../feedback/Badge';
 import { Popover } from '../overlays/Popover';
+import { VirtualList } from '../navigation/VirtualList';
 
 export interface MultiSelectProps {
     options: { label: string; value: string }[];
@@ -76,7 +77,14 @@ export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
         this.element.appendChild(this.container);
 
         if (this.activePopover) {
-            this.activePopover.updateProps({ content: this.getDropdownItems() });
+            const virtualList = new VirtualList<{ label: string; value: string }>({
+                items: this.props.options,
+                itemHeight: 32,
+                height: '300px',
+                renderItem: (opt, index) => this.renderDropdownItem(opt)
+            });
+            this.activePopover.updateProps({ content: [virtualList.getElement()] });
+            this.appendChild(virtualList);
         }
     }
 
@@ -87,43 +95,51 @@ export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
             return;
         }
 
+        const virtualList = new VirtualList<{ label: string; value: string }>({
+            items: this.props.options,
+            itemHeight: 32,
+            height: '300px',
+            renderItem: (opt, index) => this.renderDropdownItem(opt)
+        });
+
         this.activePopover = new Popover({
             anchor: this.container,
-            content: this.getDropdownItems(),
+            content: [virtualList.getElement()],
             placement: 'bottom',
             onClose: () => { this.activePopover = null; }
         });
+        this.appendChild(virtualList);
         this.activePopover.show();
     }
 
-    private getDropdownItems(): HTMLElement[] {
-        return this.props.options.map(opt => {
-            const isSelected = this.props.selectedValues.includes(opt.value);
-            const el = document.createElement('div');
-            Object.assign(el.style, {
-                padding: `4px ${Theme.spacing.md}`,
-                cursor: 'pointer',
-                backgroundColor: isSelected ? Theme.colors.bgSecondary : Theme.colors.bgPrimary,
-                color: Theme.colors.textMain
-            });
-
-            el.onmouseenter = () => {
-                if (!isSelected) el.style.backgroundColor = Theme.colors.bgTertiary;
-            };
-            el.onmouseleave = () => {
-                if (!isSelected) el.style.backgroundColor = Theme.colors.bgPrimary;
-            };
-
-            el.onclick = () => {
-                const next = isSelected
-                    ? this.props.selectedValues.filter(v => v !== opt.value)
-                    : [...this.props.selectedValues, opt.value];
-                this.updateProps({ selectedValues: next });
-                if (this.props.onChange) this.props.onChange(next);
-            };
-            el.textContent = opt.label;
-            return el;
+    private renderDropdownItem(opt: { label: string; value: string }): HTMLElement {
+        const isSelected = this.props.selectedValues.includes(opt.value);
+        const el = document.createElement('div');
+        Object.assign(el.style, {
+            padding: `4px ${Theme.spacing.md}`,
+            cursor: 'pointer',
+            backgroundColor: isSelected ? Theme.colors.bgSecondary : Theme.colors.bgPrimary,
+            color: Theme.colors.textMain,
+            height: '32px',
+            boxSizing: 'border-box'
         });
+
+        el.onmouseenter = () => {
+            if (!isSelected) el.style.backgroundColor = Theme.colors.bgTertiary;
+        };
+        el.onmouseleave = () => {
+            if (!isSelected) el.style.backgroundColor = Theme.colors.bgPrimary;
+        };
+
+        el.onclick = () => {
+            const next = isSelected
+                ? this.props.selectedValues.filter(v => v !== opt.value)
+                : [...this.props.selectedValues, opt.value];
+            this.updateProps({ selectedValues: next });
+            if (this.props.onChange) this.props.onChange(next);
+        };
+        el.textContent = opt.label;
+        return el;
     }
 
     public destroy(): void {

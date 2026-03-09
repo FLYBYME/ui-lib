@@ -4,6 +4,7 @@ import { BaseComponent } from '../BaseComponent';
 import { Theme } from '../theme';
 import { Popover } from '../overlays/Popover';
 import { TextInput } from './TextInput';
+import { VirtualList } from '../navigation/VirtualList';
 
 export interface ComboBoxOption {
     label: string;
@@ -89,41 +90,48 @@ export class ComboBox extends BaseComponent<ComboBoxProps> {
             return;
         }
 
-        const listContent = this.filteredOptions.map((option, index) => {
-            const item = document.createElement('div');
-            item.textContent = option.label;
-            item.setAttribute('role', 'option');
-            Object.assign(item.style, {
-                padding: '8px 12px',
-                cursor: 'pointer',
-                backgroundColor: index === this.selectedIndex ? 'var(--ui-bg-hover)' : 'transparent',
-                color: 'var(--ui-text-main)'
-            });
+        const virtualList = new VirtualList<ComboBoxOption>({
+            items: this.filteredOptions,
+            itemHeight: 32,
+            height: '300px',
+            renderItem: (option, index) => {
+                const item = document.createElement('div');
+                item.textContent = option.label;
+                item.setAttribute('role', 'option');
+                Object.assign(item.style, {
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    backgroundColor: index === this.selectedIndex ? 'var(--ui-bg-hover)' : 'transparent',
+                    color: 'var(--ui-text-main)',
+                    height: '32px',
+                    boxSizing: 'border-box'
+                });
 
-            this.addEventListener(item, 'mouseenter', () => {
-                this.selectedIndex = index;
-                this.updatePopoverContent();
-            });
+                this.addEventListener(item, 'mouseenter', () => {
+                    this.selectedIndex = index;
+                    this.updatePopoverContent();
+                });
 
-            this.addEventListener(item, 'click', () => {
-                this.selectOption(option);
-            });
+                this.addEventListener(item, 'click', () => {
+                    this.selectOption(option);
+                });
 
-            return item;
+                return item;
+            }
         });
 
         if (this.popover) {
-            // Re-render popover content
-            this.popover.updateProps({ content: listContent });
+            this.popover.updateProps({ content: [virtualList.getElement()] });
         } else {
             this.popover = new Popover({
                 anchor: this.input.getElement(),
-                content: listContent,
+                content: [virtualList.getElement()],
                 placement: 'bottom'
             });
             this.popover.show();
             (this.input.getElement() as HTMLInputElement).setAttribute('aria-expanded', 'true');
         }
+        this.appendChild(virtualList);
     }
 
     private updatePopoverContent(): void {

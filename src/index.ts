@@ -1,5 +1,6 @@
 export * from './BaseComponent';
 export * from './theme';
+export * from './core/Store';
 
 // Feedback components
 export * from './feedback/Badge';
@@ -19,6 +20,8 @@ export * from './data-compoents/Tag';
 export * from './data-compoents/Card';
 export * from './data-compoents/Avatar';
 export * from './data-compoents/Table';
+export * from './data-compoents/InfiniteLoader';
+export * from './data-compoents/DataGrid';
 
 // Form components
 export * from './forms/Button';
@@ -51,6 +54,8 @@ export * from './layout/SplitView';
 export * from './layout/DockingSystem';
 export * from './layout/Accordion';
 export * from './layout/Carousel';
+export * from './layout/VirtualGrid';
+export * from './layout/VirtualMasonry';
 
 // Overlay components
 export * from './overlays/Modal';
@@ -74,6 +79,7 @@ export * from './navigation/MenuBar';
 export * from './navigation/TitleBar';
 export * from './navigation/Header';
 export * from './navigation/MenuItem';
+export * from './navigation/Router';
 
 // Panel components
 export * from './panels/ActivityBarItem';

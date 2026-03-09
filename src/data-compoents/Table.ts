@@ -1,6 +1,7 @@
 // src/client/ui-lib/data/Table.ts
 import { BaseComponent } from '../BaseComponent';
 import { Theme } from '../theme';
+import { VirtualList } from '../navigation/VirtualList';
 
 export interface TableColumn<T> {
     key: keyof T | string;
@@ -104,10 +105,9 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
         });
         thead.appendChild(headerRow);
         table.appendChild(thead);
+        this.element.appendChild(table);
 
-        // Body
-        const tbody = document.createElement('tbody');
-
+        // Body (Virtualized)
         let displayData = [...data];
         if (this.sortKey) {
             displayData.sort((a, b) => {
@@ -119,66 +119,80 @@ export class Table<T = any> extends BaseComponent<TableProps<T>> {
             });
         }
 
-        displayData.forEach((item) => {
-            const tr = document.createElement('tr');
-            this.rowElements.set(item, tr);
-
-            Object.assign(tr.style, {
-                borderBottom: `1px solid ${Theme.colors.border}`,
-                transition: 'background-color 0.1s'
-            });
-
-            this.addEventListener(tr, 'mouseenter', () => {
-                if (!this.selectedItems.includes(item)) {
-                    tr.style.backgroundColor = Theme.colors.bgTertiary;
-                }
-            });
-            this.addEventListener(tr, 'mouseleave', () => {
-                if (!this.selectedItems.includes(item)) {
-                    tr.style.backgroundColor = 'transparent';
-                }
-            });
-
-            if (selectable) {
-                tr.style.cursor = 'pointer';
-                this.addEventListener(tr, 'click', ((e: MouseEvent) => {
-                    this.handleRowClick(item, e);
-                }) as EventListener);
-            }
-
-            this.updateRowStyle(item);
-
-            columns.forEach(col => {
-                const td = document.createElement('td');
-                td.style.padding = '8px 12px';
-
-                if (col.render) {
-                    const rendered = col.render(item);
-                    if (rendered instanceof BaseComponent) {
-                        this.appendChild(rendered);
-                        td.appendChild(rendered.getElement());
-                    } else if (rendered instanceof HTMLElement) {
-                        td.appendChild(rendered);
-                    } else {
-                        td.textContent = rendered;
-                    }
-                } else {
-                    td.textContent = String((item as any)[col.key]);
-                }
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
+        const virtualList = new VirtualList<T>({
+            items: displayData,
+            itemHeight: 40,
+            height: height ? `calc(${height} - 32px)` : '400px',
+            renderItem: (item: T) => this.renderRow(item)
         });
-        table.appendChild(tbody);
-        this.element.appendChild(table);
+
+        this.appendChild(virtualList);
+        this.element.appendChild(virtualList.getElement());
 
         if (this.props.onScroll) {
-            this.addEventListener(this.element, 'scroll', () => {
-                const scrollTop = this.element.scrollTop;
-                const maxScroll = this.element.scrollHeight - this.element.clientHeight;
+            this.addEventListener(virtualList.getElement(), 'scroll', () => {
+                const scrollTop = virtualList.getElement().scrollTop;
+                const maxScroll = virtualList.getElement().scrollHeight - virtualList.getElement().clientHeight;
                 this.props.onScroll!(scrollTop, maxScroll);
             });
         }
+    }
+
+    private renderRow(item: T): HTMLElement {
+        const tr = document.createElement('tr');
+        this.rowElements.set(item, tr);
+        const { columns, selectable } = this.props;
+
+        Object.assign(tr.style, {
+            borderBottom: `1px solid ${Theme.colors.border}`,
+            transition: 'background-color 0.1s',
+            display: 'table',
+            width: '100%',
+            tableLayout: 'fixed'
+        });
+
+        this.addEventListener(tr, 'mouseenter', () => {
+            if (!this.selectedItems.includes(item)) {
+                tr.style.backgroundColor = Theme.colors.bgTertiary;
+            }
+        });
+        this.addEventListener(tr, 'mouseleave', () => {
+            if (!this.selectedItems.includes(item)) {
+                tr.style.backgroundColor = 'transparent';
+            }
+        });
+
+        if (selectable) {
+            tr.style.cursor = 'pointer';
+            this.addEventListener(tr, 'click', ((e: MouseEvent) => {
+                this.handleRowClick(item, e);
+            }) as EventListener);
+        }
+
+        this.updateRowStyle(item);
+
+        columns.forEach(col => {
+            const td = document.createElement('td');
+            td.style.padding = '8px 12px';
+            td.style.width = col.width || 'auto';
+
+            if (col.render) {
+                const rendered = col.render(item);
+                if (rendered instanceof BaseComponent) {
+                    this.appendChild(rendered);
+                    td.appendChild(rendered.getElement());
+                } else if (rendered instanceof HTMLElement) {
+                    td.appendChild(rendered);
+                } else {
+                    td.textContent = rendered;
+                }
+            } else {
+                td.textContent = String((item as any)[col.key]);
+            }
+            tr.appendChild(td);
+        });
+
+        return tr;
     }
 
     private handleRowClick(item: T, e: MouseEvent): void {

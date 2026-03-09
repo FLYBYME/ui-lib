@@ -4,15 +4,18 @@ import { BaseComponent } from '../BaseComponent';
 
 export interface VirtualListProps<T> {
     items: T[];
-    itemHeight: number;
+    itemHeight?: number; // fallback height if not specified/measured
     renderItem: (item: T, index: number) => BaseComponent<any> | HTMLElement;
     height?: string;
+    useWindowScroll?: boolean;
 }
 
 export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
     private container: HTMLDivElement;
     private spacer: HTMLDivElement;
     private content: HTMLDivElement;
+    private heightCache: Map<number, number> = new Map();
+    private totalMeasuredHeight: number = 0;
 
     constructor(props: VirtualListProps<T>) {
         super('div', props);
@@ -39,17 +42,17 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
     }
 
     public render(): void {
-        const { height = '100%', items, itemHeight } = this.props;
+        const { height = '100%', items, useWindowScroll } = this.props;
 
         this.applyStyles({
-            height,
+            height: useWindowScroll ? 'auto' : height,
             width: '100%',
-            overflowY: 'auto',
+            overflowY: useWindowScroll ? 'visible' : 'auto',
             position: 'relative',
         });
 
         this.container.style.position = 'relative';
-        this.container.style.height = `${items.length * itemHeight}px`;
+        this.updateTotalHeight();
 
         this.content.style.position = 'absolute';
         this.content.style.top = '0';
@@ -59,34 +62,71 @@ export class VirtualList<T> extends BaseComponent<VirtualListProps<T>> {
         this.updateVisibleItems();
     }
 
+    private updateTotalHeight(): void {
+        const { items, itemHeight = 40 } = this.props;
+        let total = 0;
+        for (let i = 0; i < items.length; i++) {
+            total += this.heightCache.get(i) || itemHeight;
+        }
+        this.container.style.height = `${total}px`;
+    }
+
     private initScrollListener(): void {
-        this.addEventListener(this.element, 'scroll', () => this.updateVisibleItems());
+        const target = this.props.useWindowScroll ? window : this.element;
+        this.addEventListener(target as any, 'scroll', () => this.updateVisibleItems());
     }
 
     private updateVisibleItems(): void {
-        const { items, itemHeight, renderItem } = this.props;
-        const scrollTop = this.element.scrollTop;
-        const viewportHeight = this.element.clientHeight;
+        const { items, itemHeight = 40, renderItem, useWindowScroll } = this.props;
+        
+        let scrollTop = useWindowScroll ? window.scrollY : this.element.scrollTop;
+        const viewportHeight = useWindowScroll ? window.innerHeight : this.element.clientHeight;
 
-        const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
-        const endIndex = Math.min(items.length, Math.ceil((scrollTop + viewportHeight) / itemHeight));
+        if (useWindowScroll) {
+            const rect = this.element.getBoundingClientRect();
+            scrollTop = Math.max(0, -rect.top);
+        }
 
-        this.clear(); // Use safe clear
-        this.content.style.transform = `translateY(${startIndex * itemHeight}px)`;
+        // Find starting index from cumulative heights
+        let currentY = 0;
+        let startIndex = 0;
+        while (startIndex < items.length - 1 && currentY + (this.heightCache.get(startIndex) || itemHeight) < scrollTop) {
+            currentY += this.heightCache.get(startIndex) || itemHeight;
+            startIndex++;
+        }
 
-        for (let i = startIndex; i < endIndex; i++) {
-            const item = items[i];
-            if (item === undefined) {
-                continue;
-            }
-            const rendered = renderItem(item, i);
+        this.clear();
+        this.content.style.transform = `translateY(${currentY}px)`;
+
+        let renderedY = currentY;
+        let endIndex = startIndex;
+        
+        // Render enough items to fulfill viewport
+        while (endIndex < items.length && renderedY < scrollTop + viewportHeight) {
+            const item = items[endIndex];
+            const rendered = renderItem(item, endIndex);
+            let renderedEl: HTMLElement;
+
             if (rendered instanceof BaseComponent) {
                 this.appendChild(rendered);
-                this.content.appendChild(rendered.getElement());
+                renderedEl = rendered.getElement();
             } else {
-                this.content.appendChild(rendered);
+                renderedEl = rendered;
             }
+            this.content.appendChild(renderedEl);
+
+            // Measure and cache
+            const measuredHeight = renderedEl.offsetHeight;
+            if (measuredHeight > 0 && this.heightCache.get(endIndex) !== measuredHeight) {
+                this.heightCache.set(endIndex, measuredHeight);
+                // Total height may have changed, so we trigger a re-render next scroll or manually
+            }
+
+            renderedY += measuredHeight || itemHeight;
+            endIndex++;
         }
+
+        this.updateTotalHeight();
     }
 
     public setItems(items: T[]): void {

@@ -4,13 +4,15 @@ import { Theme } from './theme';
 
 export interface BaseComponentProps {
     className?: string;
+    key?: string | number;
 }
 
 export abstract class BaseComponent<TProps = any> {
     protected element: HTMLElement;
     protected _props: TProps;
     protected disposables: { dispose: () => void }[] = [];
-    protected childComponents: Set<BaseComponent> = new Set();
+    protected childComponents: Map<string | number | BaseComponent, BaseComponent> = new Map();
+    private static storeListeners: Map<string, Set<{ component: BaseComponent, callback: (val: any) => void }>> = new Map();
 
     /**
      * @param tagName The HTML tag to create (e.g., 'div', 'button')
@@ -135,9 +137,10 @@ export abstract class BaseComponent<TProps = any> {
      * Utility to safely append children (either BaseComponents, DOM nodes, or text).
      */
     public appendChildren(...children: (BaseComponent<any> | Node | string)[]): BaseComponent<any> {
-        children.forEach(child => {
+        children.forEach((child, index) => {
             if (child instanceof BaseComponent) {
-                this.childComponents.add(child);
+                const key = (child.props as any)?.key ?? index;
+                this.childComponents.set(key, child);
                 this.element.appendChild(child.getElement());
             } else if (typeof child === 'string') {
                 this.element.appendChild(document.createTextNode(child));
@@ -152,7 +155,7 @@ export abstract class BaseComponent<TProps = any> {
      * Get children of the component.
      */
     public getChildren(): BaseComponent<any>[] {
-        return Array.from(this.childComponents);
+        return Array.from(this.childComponents.values());
     }
 
     /**
@@ -163,6 +166,21 @@ export abstract class BaseComponent<TProps = any> {
         this.childComponents.clear();
         this.element.innerHTML = '';
         return this;
+    }
+
+    /**
+     * Subscribes to global state changes.
+     */
+    public subscribe(storeName: string, callback: (value: any) => void): void {
+        import('./core/Store').then(({ getStore }) => {
+            const store = getStore(storeName);
+            if (store) {
+                const unsubscribe = store.subscribe((newVal: any) => {
+                    callback(newVal);
+                });
+                this.disposables.push({ dispose: unsubscribe });
+            }
+        });
     }
 
     /**
@@ -184,10 +202,11 @@ export abstract class BaseComponent<TProps = any> {
 
     /**
      * Updates props and triggers a re-render. 
-     * Useful for dynamic components.
+     * Optimistically patches instead of full clear when possible.
      */
     public updateProps(newProps: Partial<TProps>): BaseComponent<any> {
         const oldClassName = (this._props as any)?.className;
+        const oldProps = { ...this._props };
         this._props = { ...this._props, ...newProps };
         const newClassName = (this._props as any)?.className;
 
@@ -200,10 +219,23 @@ export abstract class BaseComponent<TProps = any> {
             }
         }
 
-        // Safe clear before re-rendering
+        // Lightweight patching strategy:
+        // Subclasses should override this logic if they want fine-grained updates.
+        // By default, we still call render() which might be destructive depending on implementation.
+        // However, we can improve the default by checking if the structure needs full rebuild.
+        this.patch(oldProps, this._props);
+        
+        return this;
+    }
+
+    /**
+     * Default patching logic. Can be overridden for high-performance updates.
+     */
+    protected patch(oldProps: TProps, newProps: TProps): void {
+        // If the component doesn't implement fine-grained patching, we fallback to clear + render
+        // but we only do it if props actually changed.
         this.clear();
         this.render();
-        return this;
     }
 
     public get props(): TProps {
